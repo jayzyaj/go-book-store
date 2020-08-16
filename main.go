@@ -2,119 +2,65 @@ package main
 
 import (
 	// "database/sql"
-	"encoding/json"
-	"fmt"
+	// "encoding/json"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/jayzyaj/go-book-store/configs"
 	"github.com/jayzyaj/go-book-store/controllers"
-	"github.com/jayzyaj/go-book-store/models"
-	"github.com/jinzhu/gorm"
+	// "github.com/jayzyaj/go-book-store/models"
 	"log"
 	"net/http"
 )
 
-var db *gorm.DB
-
-func init() {
-	db, _ = gorm.Open("mysql", "root:79056123@/books?parseTime=true")
-
-	db.CreateTable(&models.Book{})
-	db.Set("gorm:table_options", "ENGINE=InnoDB").CreateTable(&models.Book{})
-	db.AutoMigrate(&models.Book{})
-
-	// var newBook = Book{Title: "Gago", Author: "Badang", Year: "2010"}
-	// db.Create(&newBook)
-
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	// err = db.Ping()
-
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-	fmt.Println("Connected")
-
-	// defer db.Close()
-}
-
 func main() {
+	db := configs.InitDB()
 	router := mux.NewRouter()
 	controllers := controllers.Controllers{}
 
 	router.HandleFunc("/books", controllers.GetBooks(db)).Methods("GET")
-	router.HandleFunc("/books/{id}", getBook).Methods("GET")
-	router.HandleFunc("/books", addBook).Methods("POST")
-	router.HandleFunc("/books/{id}", updateBook).Methods("PUT")
-	router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+	router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
+	router.HandleFunc("/books", controllers.AddBook(db)).Methods("POST")
+	router.HandleFunc("/books/{id}", controllers.UpdateBook(db)).Methods("PUT")
+	router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
-func getBook(w http.ResponseWriter, r *http.Request) {
-	var book models.Book
-	params := mux.Vars(r)
+// func updateBook(w http.ResponseWriter, r *http.Request) {
+// 	var book models.Book
+// 	params := mux.Vars(r)
 
-	err := db.Where("id = ?", params["id"]).First(&book).Error
+// 	err := db.Where("id = ?", params["id"]).First(&book).Error
 
-	if err != nil {
-		panic(err.Error())
-		return
-	}
+// 	if err != nil {
+// 		panic(err.Error())
+// 		return
+// 	}
 
-	json.NewEncoder(w).Encode(book)
-}
+// 	var updatedBook models.Book
+// 	json.NewDecoder(r.Body).Decode(&updatedBook)
 
-func addBook(w http.ResponseWriter, r *http.Request) {
-	var book models.Book
-	json.NewDecoder(r.Body).Decode(&book)
+// 	book.Title = updatedBook.Title
+// 	book.Author = updatedBook.Author
+// 	book.Year = updatedBook.Year
 
-	err := db.Create(&book).Error
+// 	db.Save(&book)
 
-	if err != nil {
-		panic(err.Error())
-		return
-	}
+// 	json.NewEncoder(w).Encode(book)
+// }
 
-	json.NewEncoder(w).Encode(book)
-}
+// func removeBook(w http.ResponseWriter, r *http.Request) {
+// 	var book models.Book
+// 	params := mux.Vars(r)
 
-func updateBook(w http.ResponseWriter, r *http.Request) {
-	var book models.Book
-	params := mux.Vars(r)
+// 	err := db.Where("id = ?", params["id"]).First(&book).Error
 
-	err := db.Where("id = ?", params["id"]).First(&book).Error
+// 	if err != nil {
+// 		panic(err.Error())
+// 		return
+// 	}
 
-	if err != nil {
-		panic(err.Error())
-		return
-	}
+// 	db.Delete(&book)
 
-	var updatedBook models.Book
-	json.NewDecoder(r.Body).Decode(&updatedBook)
-
-	book.Title = updatedBook.Title
-	book.Author = updatedBook.Author
-	book.Year = updatedBook.Year
-
-	db.Save(&book)
-
-	json.NewEncoder(w).Encode(book)
-}
-
-func removeBook(w http.ResponseWriter, r *http.Request) {
-	var book models.Book
-	params := mux.Vars(r)
-
-	err := db.Where("id = ?", params["id"]).First(&book).Error
-
-	if err != nil {
-		panic(err.Error())
-		return
-	}
-
-	db.Delete(&book)
-
-	json.NewEncoder(w).Encode(book)
-}
+// 	json.NewEncoder(w).Encode(book)
+// }
